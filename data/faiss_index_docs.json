@@ -1,0 +1,41 @@
+[
+  {
+    "id": "doc_ecbf2d796ad6c461430c9ec3e82c7465",
+    "content": "Quantum computing is a revolutionary technology that leverages the principles of quantum mechanics to process information. Unlike classical computers that use bits (0 or 1), quantum computers use quantum bits or 'qubits' that can exist in multiple states simultaneously. This property, called superposition, allows quantum computers to perform many calculations in parallel. Another key principle is entanglement, where qubits become correlated and the state of one qubit instantaneously affects another, regardless of distance. Quantum computing has the potential to solve complex problems that are practically impossible for classical computers, such as cryptography, drug discovery, financial modeling, and optimization problems.",
+    "title": "Introduction to Quantum Computing",
+    "url": "https://example.com/quantum-computing-intro",
+    "metadata": {
+      "category": "technology",
+      "difficulty": "intermediate",
+      "author": "Dr. Alice Johnson",
+      "publication_date": "2023-10-01",
+      "is_chunk": false
+    }
+  },
+  {
+    "id": "doc_17d2542f39639599b3fb07fc6a483f05",
+    "content": "Sustainable agriculture focuses on producing food while preserving the environment and supporting farmers' livelihoods. Key practices include crop rotation to maintain soil health, integrated pest management to reduce chemical use, water conservation through efficient irrigation systems, and biodiversity preservation. Organic farming methods eliminate synthetic pesticides and fertilizers, while precision agriculture uses technology to optimize resource use. Cover crops prevent soil erosion and improve fertility, and agroforestry integrates trees with crops for multiple benefits. These practices help address climate change, protect natural resources, and ensure food security for future generations.",
+    "title": "Sustainable Agriculture Practices",
+    "url": "https://example.com/sustainable-agriculture",
+    "metadata": {
+      "category": "agriculture",
+      "difficulty": "beginner",
+      "author": "Prof. Maria Garcia",
+      "publication_date": "2023-09-15",
+      "is_chunk": false
+    }
+  },
+  {
+    "id": "doc_b8756abf5610a037c31732818f25fd57",
+    "content": "Blockchain is a distributed ledger technology that maintains a continuously growing list of records, called blocks, linked and secured using cryptography. Each block contains a cryptographic hash of the previous block, a timestamp, and transaction data. This creates an immutable record that is resistant to modification. Cryptocurrencies like Bitcoin and Ethereum use blockchain technology to enable peer-to-peer transactions without intermediaries. Smart contracts on blockchain platforms can automatically execute agreements when predetermined conditions are met. Beyond cryptocurrencies, blockchain has applications in supply chain management, healthcare records, voting systems, and digital identity verification.",
+    "title": "Blockchain Technology and Cryptocurrencies",
+    "url": "https://example.com/blockchain-technology",
+    "metadata": {
+      "category": "technology",
+      "difficulty": "advanced",
+      "author": "Dr. Robert Chen",
+      "publication_date": "2023-10-10",
+      "is_chunk": false
+    }
+  }
+]
