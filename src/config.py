@@ -34,6 +34,7 @@ class Config:
     EMBEDDINGS_MODEL = os.getenv('EMBEDDINGS_MODEL', 'all-MiniLM-L6-v2')
     VECTOR_DIMENSION = int(os.getenv('VECTOR_DIMENSION', 384))
     MAX_SEARCH_RESULTS = int(os.getenv('MAX_SEARCH_RESULTS', 10))
+    USE_LIGHTWEIGHT_MODE = os.getenv('USE_LIGHTWEIGHT_MODE', 'False').lower() == 'true'
     
     # Data Processing Configuration
     DATA_DIRECTORY = os.getenv('DATA_DIRECTORY', './data/raw')
