@@ -2,6 +2,12 @@
 
 A production-ready Flask service that integrates OpenAI GPT-4 with semantic search using Sentence-Transformers and FAISS for high-quality content generation with retrieval-augmented generation (RAG).
 
+## 🌐 Live Demo
+
+**Frontend:** [https://faiss-generation.vercel.app/](https://faiss-generation.vercel.app/)
+
+> **⚠️ Important Note:** The backend server is hosted on **Railway.com's Free Tier**. Due to platform limitations, the server may pause or shut down after 30 days or if resource limits are reached. If the chat service is not responding, the server might need to be restarted. Please request a restart if you encounter issues.
+
 ## Features
 
 - **GPT-4 Integration**: Advanced content generation using OpenAI's latest models

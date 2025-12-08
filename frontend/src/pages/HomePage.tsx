@@ -7,7 +7,8 @@ import {
   DocumentTextIcon,
   ChartBarIcon,
   ArrowRightIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 
 const HomePage: React.FC = () => {
@@ -45,6 +46,17 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="min-h-screen">
+      {/* Disclaimer Banner */}
+      <div className="bg-yellow-50 border-b border-yellow-200 px-4 py-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-center text-sm text-yellow-800">
+          <ExclamationTriangleIcon className="h-5 w-5 mr-2 text-yellow-600" />
+          <p>
+            <strong>Note:</strong> The backend server is running on Railway.com's free tier. It may pause or close due to inactivity or limits. 
+            If the service is unresponsive, it can be restarted on request.
+          </p>
+        </div>
+      </div>
+
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-cyan-50"></div>
