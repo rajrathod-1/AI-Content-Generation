@@ -1,0 +1,21 @@
+# Core Flask & API
+Flask==2.3.3
+Flask-CORS==4.0.0
+gunicorn>=21.2.0
+python-dotenv>=1.0.0
+
+# AI/ML (optimized versions)
+openai>=1.3.0
+sentence-transformers>=2.2.0
+faiss-cpu>=1.8.0
+
+# Data processing (minimal)
+numpy>=1.24.0
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+
+# Caching
+redis>=5.0.0
+
+# Utilities
+python-multipart>=0.0.6
