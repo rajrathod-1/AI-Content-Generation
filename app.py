@@ -206,11 +206,10 @@ def create_app(config_name='default'):
     
     return app
 
+# Create the application instance for Gunicorn
+app = create_app(os.getenv('FLASK_ENV', 'production'))
+
 if __name__ == '__main__':
-    # Get configuration from environment
-    config_name = os.getenv('FLASK_ENV', 'development')
-    app = create_app(config_name)
-    
     # Run the application
     app.run(
         host=app.config['HOST'],
