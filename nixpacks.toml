@@ -1,5 +1,13 @@
-{
-  "providers": ["python"],
-  "buildCommand": "pip install -r requirements.production.txt",
-  "startCommand": "gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120"
-}
+providers = ["python"]
+
+[phases.setup]
+nixPkgs = ["python3", "gcc"]
+
+[phases.install]
+cmds = [
+    "pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu",
+    "pip install --no-cache-dir -r requirements.production.txt"
+]
+
+[start]
+cmd = "gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120"
