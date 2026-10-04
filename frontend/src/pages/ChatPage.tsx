@@ -1,8 +1,11 @@
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
-import Markdown from 'react-markdown'
+import { createContext, useContext, useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from 'react'
+import { useSearchParams } from 'react-router'
+import Markdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { ArrowUp, Check, Copy, RotateCcw, SquarePen } from 'lucide-react'
 import { api, type BackendState, type GenerateResponse, type Source } from '../api'
+import KineticTitle from '../components/KineticTitle'
+import Magnetic from '../components/Magnetic'
+import { world } from '../world/state'
 
 type Message =
   | { id: number; role: 'user'; text: string }
@@ -22,17 +25,31 @@ export default function ChatPage({ backend }: { backend: BackendState }) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [pending, setPending] = useState(false)
+  const [params, setParams] = useSearchParams()
   const nextId = useRef(0)
   const endRef = useRef<HTMLDivElement>(null)
+  const askedFromUrl = useRef(false)
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [messages, pending])
 
+  // The world leans in while we wait
+  useEffect(() => {
+    world.thinking = pending
+  }, [pending])
+  useEffect(
+    () => () => {
+      world.thinking = false
+    },
+    [],
+  )
+
   async function ask(query: string) {
     setPending(true)
     try {
       const res = await api.generate(query)
+      world.pulseAt = performance.now()
       setMessages((m) => [...m, { id: nextId.current++, role: 'assistant', text: res.content, res }])
     } catch (e) {
       const text = e instanceof Error ? e.message : 'Something went wrong.'
@@ -49,6 +66,16 @@ export default function ChatPage({ backend }: { backend: BackendState }) {
     setMessages((m) => [...m, { id: nextId.current++, role: 'user', text: query }])
     ask(query)
   }
+
+  // Arriving from the home page's last chapter with ?q=
+  useEffect(() => {
+    const q = params.get('q')
+    if (!q || askedFromUrl.current) return
+    askedFromUrl.current = true
+    setParams({}, { replace: true })
+    send(q)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function retry(failed: Extract<Message, { role: 'error' }>) {
     setMessages((m) => m.filter((msg) => msg.id !== failed.id))
@@ -67,70 +94,73 @@ export default function ChatPage({ backend }: { backend: BackendState }) {
     }
   }
 
+  let questionNo = 0
   return (
-    <div className="flex h-[calc(100dvh-3.5rem)] flex-col">
-      <div className="border-b border-line">
-        <div className="mx-auto flex h-12 max-w-3xl items-center justify-between px-4">
-          <h1 className="text-sm font-medium">Assistant</h1>
-          <button
-            type="button"
-            onClick={() => setMessages([])}
-            disabled={!messages.length || pending}
-            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-muted hover:text-fg disabled:pointer-events-none disabled:opacity-40"
-          >
-            <SquarePen className="size-4" aria-hidden="true" /> New chat
-          </button>
-        </div>
-      </div>
+    <div className="page-in is-in min-h-svh pt-28 pb-56">
+      <div className="gutter">
+        <div className="max-w-[44rem] lg:ml-[6vw]">
+          <div className="flex items-baseline justify-between border-b border-rule pb-4">
+            <h1 className="eyebrow">Inquiry</h1>
+            <button type="button" onClick={() => setMessages([])} disabled={!messages.length || pending} className="bracket-btn text-dim disabled:opacity-30">
+              New inquiry
+            </button>
+          </div>
 
-      <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-3xl px-4 py-8">
           {messages.length === 0 && !pending ? (
-            <div className="py-12 sm:py-20">
-              <p className="eyebrow">Ask anything current</p>
-              <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
-                I search the web and a vector index, then answer with sources.
-              </h2>
-              <ul className="mt-10 grid gap-2 sm:grid-cols-2">
-                {SUGGESTIONS.map((s) => (
-                  <li key={s}>
+            <div className="pt-16 sm:pt-24">
+              <KineticTitle lines={['What do you', 'want to know?']} className="headline" />
+              <ol className="mt-14 border-t border-rule">
+                {SUGGESTIONS.map((s, i) => (
+                  <li key={s} className="border-b border-rule">
                     <button
                       type="button"
                       onClick={() => send(s)}
-                      className="panel h-full w-full p-4 text-left text-sm text-muted transition-colors hover:border-accent/40 hover:text-fg"
+                      className="group flex w-full items-baseline gap-6 py-4 text-left text-lg font-light text-dim transition-colors hover:text-paper"
                     >
-                      {s}
+                      <span className="font-mono text-xs text-signal">{String(i + 1).padStart(2, '0')}</span>
+                      <span className="transition-transform duration-500 ease-out-expo group-hover:translate-x-2">{s}</span>
                     </button>
                   </li>
                 ))}
-              </ul>
+              </ol>
             </div>
           ) : (
-            <ol className="space-y-8" aria-label="Conversation">
+            <ol className="space-y-16 pt-14" aria-label="Conversation">
               {messages.map((m) => (
-                <li key={m.id} className="msg-in">
+                <li key={m.id} className="page-in">
                   {m.role === 'user' && (
-                    <div className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-raised px-4 py-2.5 whitespace-pre-wrap">
-                      {m.text}
+                    <div>
+                      <p className="font-mono text-xs text-signal">Q.{String(++questionNo).padStart(2, '0')}</p>
+                      <h2 className="mt-3 text-3xl leading-tight font-light tracking-tight whitespace-pre-wrap sm:text-4xl">{m.text}</h2>
                     </div>
                   )}
                   {m.role === 'assistant' && <Answer text={m.text} res={m.res} />}
                   {m.role === 'error' && (
-                    <div role="alert" className="rounded-xl border border-danger/30 bg-danger/5 p-4 text-sm">
-                      <p>{m.text}</p>
-                      <button type="button" onClick={() => retry(m)} disabled={pending} className="btn-ghost mt-3 py-1.5">
-                        <RotateCcw className="size-3.5" aria-hidden="true" /> Retry
+                    <div role="alert" className="border-l border-signal pl-5">
+                      <p className="font-mono text-xs tracking-wide text-signal uppercase">Error</p>
+                      <p className="mt-2 text-lg font-light">{m.text}</p>
+                      <button type="button" onClick={() => retry(m)} disabled={pending} className="bracket-btn mt-4 text-paper">
+                        Retry
                       </button>
                     </div>
                   )}
                 </li>
               ))}
               {pending && (
-                <li role="status" aria-live="polite" className="space-y-3">
-                  <p className="font-mono text-xs text-muted">Searching the web and the vector index…</p>
-                  <div className="skeleton h-3 w-11/12 rounded" />
-                  <div className="skeleton h-3 w-4/5 rounded" />
-                  <div className="skeleton h-3 w-3/5 rounded" />
+                <li role="status" aria-live="polite">
+                  <p className="seek font-mono text-xs text-dim">
+                    Retrieving{' '}
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <span key={n} style={{ '--i': n } as React.CSSProperties}>
+                        [{n}]{' '}
+                      </span>
+                    ))}
+                  </p>
+                  <div className="mt-6 space-y-3">
+                    <div className="skeleton h-3.5 w-full" />
+                    <div className="skeleton h-3.5 w-11/12" />
+                    <div className="skeleton h-3.5 w-3/5" />
+                  </div>
                 </li>
               )}
             </ol>
@@ -139,14 +169,12 @@ export default function ChatPage({ backend }: { backend: BackendState }) {
         </div>
       </div>
 
-      <form onSubmit={onSubmit} className="border-t border-line bg-canvas">
-        <div className="mx-auto max-w-3xl px-4 py-4">
+      <form onSubmit={onSubmit} className="gutter fixed inset-x-0 bottom-0 z-40 bg-linear-to-t from-ink via-ink/95 to-transparent pt-16 pb-6">
+        <div className="max-w-[44rem] lg:ml-[6vw]">
           {backend === 'offline' && (
-            <p className="mb-3 text-sm text-warn">
-              The backend isn't responding right now. It may be asleep on its free tier, so give it a minute.
-            </p>
+            <p className="mb-3 font-mono text-xs text-warn">The backend isn't responding. It may be asleep on its free tier, so give it a minute.</p>
           )}
-          <div className="flex items-end gap-2 rounded-xl border border-line bg-surface p-2 transition-colors focus-within:border-accent/50">
+          <div className="flex items-end gap-4 border-b border-rule transition-colors focus-within:border-paper">
             <label htmlFor="prompt" className="sr-only">
               Ask a question
             </label>
@@ -158,20 +186,21 @@ export default function ChatPage({ backend }: { backend: BackendState }) {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={onKeyDown}
               placeholder="Ask a question…"
-              className="field-sizing-content max-h-40 min-h-10 flex-1 resize-none bg-transparent px-2 py-2 outline-none placeholder:text-muted focus-visible:outline-none"
+              className="field-sizing-content max-h-40 min-h-12 flex-1 resize-none bg-transparent py-3 text-xl font-light outline-none placeholder:text-dim/70 focus-visible:outline-none"
             />
-            <button
-              type="submit"
-              aria-label="Send"
-              disabled={!input.trim() || pending}
-              className="grid size-10 shrink-0 place-items-center rounded-lg bg-accent text-canvas transition-colors hover:bg-accent-strong disabled:bg-raised disabled:text-muted"
-            >
-              <ArrowUp className="size-5" aria-hidden="true" />
-            </button>
+            <Magnetic>
+              <button type="submit" disabled={!input.trim() || pending} className="bracket-btn mb-4 text-paper disabled:text-dim/50">
+                Ask ↵
+              </button>
+            </Magnetic>
           </div>
-          <p className="mt-2 flex justify-between gap-4 text-xs text-muted">
-            <span>Enter to send, Shift+Enter for a new line. Answers can be wrong, so check the sources.</span>
-            {input.length > MAX_CHARS * 0.9 && <span className="font-mono">{input.length}/{MAX_CHARS}</span>}
+          <p className="mt-3 flex justify-between gap-4 font-mono text-[0.6875rem] text-dim">
+            <span>Enter to ask · Shift+Enter for a new line · Answers can be wrong, so check the footnotes.</span>
+            {input.length > MAX_CHARS * 0.9 && (
+              <span>
+                {input.length}/{MAX_CHARS}
+              </span>
+            )}
           </p>
         </div>
       </form>
@@ -179,13 +208,51 @@ export default function ChatPage({ backend }: { backend: BackendState }) {
   )
 }
 
+/** Turn the model's [n] markers into links the renderer swaps for citation buttons. Skips `arr[1]`-style code. */
+const linkCitations = (text: string, max: number) =>
+  text.replace(/(?<!\w)\[(\d{1,2})\](?!\()/g, (m, d) => (+d >= 1 && +d <= max ? `[${d}](#cite-${d})` : m))
+
+// Citation hover is shared through context so the Markdown renderers stay stable (no remount, focus survives)
+const CiteContext = createContext({ hover: 0, setHover: (_n: number) => {}, id: '' })
+
+function CiteLink({ href = '', children }: { href?: string; children?: ReactNode }) {
+  const { hover, setHover, id } = useContext(CiteContext)
+  const n = href.startsWith('#cite-') ? Number(href.slice(6)) : 0
+  if (!n)
+    return (
+      <a href={href} target="_blank" rel="noreferrer">
+        {children}
+      </a>
+    )
+  return (
+    <button
+      type="button"
+      className="cite-btn"
+      aria-label={`Source ${n}`}
+      data-on={hover === n}
+      onMouseEnter={() => setHover(n)}
+      onMouseLeave={() => setHover(0)}
+      onFocus={() => setHover(n)}
+      onBlur={() => setHover(0)}
+      onClick={() => document.getElementById(`src-${id}-${n}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })}
+    >
+      {n}
+    </button>
+  )
+}
+
+const MARKDOWN_COMPONENTS: Components = { a: CiteLink }
+
 function Answer({ text, res }: { text: string; res: GenerateResponse }) {
+  const [hover, setHover] = useState(0)
   const [copied, setCopied] = useState(false)
+  const id = useRef(Math.random().toString(36).slice(2, 7)).current
+
   const meta = [
     `${Math.round(res.response_time_ms).toLocaleString()} ms`,
-    res.cached && 'cached',
-    res.sources.length ? `${res.sources.length} sources` : res.used_rag === false && 'no retrieval',
     res.model,
+    res.cached && 'cached',
+    !res.sources.length && res.used_rag === false && 'no retrieval',
   ].filter(Boolean)
 
   function copy() {
@@ -196,32 +263,33 @@ function Answer({ text, res }: { text: string; res: GenerateResponse }) {
   }
 
   return (
-    <div>
-      <div className="prose-chat">
-        <Markdown
-          remarkPlugins={[remarkGfm]}
-          components={{ a: ({ node: _node, ...props }) => <a {...props} target="_blank" rel="noreferrer" /> }}
-        >
-          {text}
-        </Markdown>
+    <article>
+      <div className="prose-answer">
+        <CiteContext value={{ hover, setHover, id }}>
+          <Markdown remarkPlugins={[remarkGfm]} components={MARKDOWN_COMPONENTS}>
+            {linkCitations(text, res.sources.length)}
+          </Markdown>
+        </CiteContext>
       </div>
 
       {res.sources.length > 0 && (
-        <ol className="mt-5 grid gap-2 sm:grid-cols-2" aria-label="Sources">
-          {res.sources.map((s, i) => (
-            <SourceCard key={i} source={s} n={i + 1} />
-          ))}
-        </ol>
+        <section className="mt-10" aria-label="Sources">
+          <p className="eyebrow border-b border-rule pb-3">Sources</p>
+          <ol>
+            {res.sources.map((s, i) => (
+              <Footnote key={i} id={`src-${id}-${i + 1}`} n={i + 1} source={s} on={hover === i + 1} onHover={setHover} />
+            ))}
+          </ol>
+        </section>
       )}
 
-      <div className="mt-4 flex items-center gap-3 font-mono text-xs text-muted">
+      <div className="mt-5 flex items-center gap-4 font-mono text-[0.6875rem] text-dim">
         <span>{meta.join(' · ')}</span>
-        <button type="button" onClick={copy} className="ml-auto inline-flex items-center gap-1 hover:text-fg">
-          {copied ? <Check className="size-3.5" aria-hidden="true" /> : <Copy className="size-3.5" aria-hidden="true" />}
+        <button type="button" onClick={copy} className="bracket-btn ml-auto">
           {copied ? 'Copied' : 'Copy'}
         </button>
       </div>
-    </div>
+    </article>
   )
 }
 
@@ -233,33 +301,37 @@ function hostname(url: string) {
   }
 }
 
-function SourceCard({ source, n }: { source: Source; n: number }) {
+function Footnote({ id, n, source, on, onHover }: { id: string; n: number; source: Source; on: boolean; onHover: (n: number) => void }) {
   const host = hostname(source.url)
   const match = Math.round(Math.min(Math.max(source.score, 0), 1) * 100)
   const body = (
     <>
-      <div className="flex items-center gap-2 font-mono text-xs text-muted">
-        <span className="text-accent">[{n}]</span>
-        <span className="truncate">{host ?? 'knowledge base'}</span>
-        <span className="ml-auto shrink-0">{source.source_type === 'web' ? 'web' : 'index'}</span>
-      </div>
-      <p className="mt-2 line-clamp-2 text-sm">{source.title || 'Untitled source'}</p>
-      <div className="mt-3 flex items-center gap-2 font-mono text-xs text-muted">
-        <span className="h-1 flex-1 overflow-hidden rounded-full bg-raised">
-          <span className="block h-full rounded-full bg-accent/70" style={{ width: `${match}%` }} />
+      <span className={`font-mono text-xs transition-colors ${on ? 'text-paper' : 'text-signal'}`}>[{n}]</span>
+      <span className="min-w-0 flex-1">
+        <span className="line-clamp-2 text-base font-light">{source.title || 'Untitled source'}</span>
+        <span className="mt-1 flex items-center gap-3 font-mono text-[0.6875rem] text-dim">
+          <span className="truncate">{host ?? 'knowledge base'}</span>
+          <span>·</span>
+          <span>{source.source_type === 'web' ? 'web' : 'index'}</span>
+          <span className="ml-auto inline-flex shrink-0 items-center gap-2">
+            <span className="h-px w-12 bg-rule">
+              <span className="block h-px bg-signal" style={{ width: `${match}%` }} />
+            </span>
+            {match}%
+          </span>
         </span>
-        {match}% match
-      </div>
+      </span>
     </>
   )
+  const cls = `flex gap-4 border-b border-rule py-4 transition-colors ${on ? 'bg-signal/10' : ''}`
   return (
-    <li>
+    <li id={id} onMouseEnter={() => onHover(n)} onMouseLeave={() => onHover(0)}>
       {host ? (
-        <a href={source.url} target="_blank" rel="noreferrer" className="panel block h-full p-3 transition-colors hover:border-accent/40">
+        <a href={source.url} target="_blank" rel="noreferrer" className={`${cls} hover:bg-white/[0.03]`}>
           {body}
         </a>
       ) : (
-        <div className="panel h-full p-3">{body}</div>
+        <div className={cls}>{body}</div>
       )}
     </li>
   )
