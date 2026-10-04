@@ -1,0 +1,9 @@
+.git
+frontend
+tests
+logs
+venv
+.venv
+**/__pycache__
+.env
+Dockerfile.backup

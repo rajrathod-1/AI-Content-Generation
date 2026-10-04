@@ -24,22 +24,21 @@ class PromptTemplates:
     """Collection of prompt templates for different use cases"""
     
     RAG_CONTENT_GENERATION = """
-You are an expert content generator. Based on the provided context and user query, create high-quality, informative content.
+You are an expert content generator. Answer the user's query using the numbered sources below.
 
-Context Information:
+Sources:
 {context}
 
 User Query: {query}
 
 Instructions:
-1. Use the provided context to inform your response
-2. Create comprehensive, well-structured content
-3. Maintain factual accuracy based on the context
-4. Write in a clear, engaging style
-5. Include relevant details from the context
-6. If the context is insufficient, indicate what additional information would be helpful
+1. Base every factual claim on the sources above
+2. Cite the source of each claim inline with its number in square brackets, like [1] or [2][3]; only use numbers listed above
+3. Write clear, well-structured Markdown in an engaging style
+4. If the sources don't cover part of the question, say so instead of guessing
+5. Do not add a separate list of sources at the end; the reader already sees them
 
-Content:
+Answer:
 """
 
     SUMMARIZATION = """
@@ -86,7 +85,7 @@ class OpenAIService:
     def __init__(self, config: Dict):
         self.config = config
         self.api_key = config.get('OPENAI_API_KEY')
-        self.model = config.get('OPENAI_MODEL', 'gpt-4-turbo-preview')
+        self.model = config.get('OPENAI_MODEL', 'gpt-4.1-mini')
         self.max_tokens = config.get('OPENAI_MAX_TOKENS', 2000)
         self.temperature = config.get('OPENAI_TEMPERATURE', 0.7)
         self.timeout = config.get('REQUEST_TIMEOUT', 30)
@@ -127,7 +126,7 @@ class OpenAIService:
         
         # Use defaults if not specified
         max_tokens = max_tokens or self.max_tokens
-        temperature = temperature or self.temperature
+        temperature = self.temperature if temperature is None else temperature  # 0 is a valid temperature
         model = model or self.model
         
         # Retry logic with exponential backoff
@@ -227,7 +226,7 @@ class OpenAIService:
     ):
         """Generate content with streaming response"""
         max_tokens = max_tokens or self.max_tokens
-        temperature = temperature or self.temperature
+        temperature = self.temperature if temperature is None else temperature  # 0 is a valid temperature
         model = model or self.model
         
         try:

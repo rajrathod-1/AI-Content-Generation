@@ -147,7 +147,7 @@ class MetricsCollector:
             self._update_response_time_bucket(response_time_ms)
             
             # Update service stats
-            service_key = endpoint.split('/')[1] if '/' in endpoint else 'unknown'
+            service_key = endpoint.strip('/').split('/')[-1] or 'unknown'
             stats = self.service_stats[service_key]
             stats['total_requests'] += 1
             if success:
@@ -236,8 +236,8 @@ class MetricsCollector:
             if recent_requests:
                 recent_avg_response_time = sum(req.response_time for req in recent_requests) / len(recent_requests)
             
-            # System metrics
-            system_metrics = self._get_current_system_metrics()
+            # Latest sample from the background thread (taking one here blocks for 1s under the lock)
+            system_metrics = self.system_history[-1] if self.system_history else None
             
             return {
                 'timestamp': current_time,
@@ -331,7 +331,10 @@ class MetricsCollector:
             disk = psutil.disk_usage('/')
             
             # Count network connections (approximate active connections)
-            connections = len(psutil.net_connections(kind='inet'))
+            try:
+                connections = len(psutil.net_connections(kind='inet'))
+            except (psutil.AccessDenied, PermissionError):
+                connections = 0
             
             return SystemMetrics(
                 cpu_percent=cpu_percent,
