@@ -20,11 +20,6 @@ def setup_logger(log_level: str = 'INFO', log_file: str = './logs/app.log') -> l
         Configured logger instance
     """
     
-    # Create logs directory if it doesn't exist
-    log_dir = os.path.dirname(log_file)
-    if log_dir and not os.path.exists(log_dir):
-        os.makedirs(log_dir, exist_ok=True)
-    
     # Convert string level to logging constant
     numeric_level = getattr(logging, log_level.upper(), logging.INFO)
     
@@ -54,15 +49,21 @@ def setup_logger(log_level: str = 'INFO', log_file: str = './logs/app.log') -> l
         }
     )
     
-    # File handler with rotation
-    file_handler = logging.handlers.RotatingFileHandler(
-        log_file,
-        maxBytes=10*1024*1024,  # 10MB
-        backupCount=5,
-        encoding='utf-8'
-    )
-    file_handler.setLevel(numeric_level)
-    file_handler.setFormatter(file_formatter)
+    # File handler with rotation; skipped on read-only hosts (serverless), where stdout is the log
+    file_handler = None
+    if log_file:
+        try:
+            os.makedirs(os.path.dirname(log_file) or '.', exist_ok=True)
+            file_handler = logging.handlers.RotatingFileHandler(
+                log_file,
+                maxBytes=10*1024*1024,  # 10MB
+                backupCount=5,
+                encoding='utf-8'
+            )
+            file_handler.setLevel(numeric_level)
+            file_handler.setFormatter(file_formatter)
+        except OSError:
+            file_handler = None
     
     # Console handler
     console_handler = logging.StreamHandler(sys.stdout)
@@ -70,14 +71,15 @@ def setup_logger(log_level: str = 'INFO', log_file: str = './logs/app.log') -> l
     console_handler.setFormatter(console_formatter)
     
     # Add handlers
-    logger.addHandler(file_handler)
+    if file_handler:
+        logger.addHandler(file_handler)
     logger.addHandler(console_handler)
     
     # Log startup message
     logger.info("=" * 50)
     logger.info("AI Content Generation Service - Logging Initialized")
     logger.info(f"Log Level: {log_level}")
-    logger.info(f"Log File: {log_file}")
+    logger.info(f"Log File: {log_file if file_handler else 'none (stdout only)'}")
     logger.info("=" * 50)
     
     return logger
