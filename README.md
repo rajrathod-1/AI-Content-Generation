@@ -1,17 +1,17 @@
 # AI Content Generation Service
 
-A production-ready Flask service that integrates OpenAI GPT-4 with semantic search using Sentence-Transformers and FAISS for high-quality content generation with retrieval-augmented generation (RAG).
+A production-ready Flask service that integrates OpenAI GPT-4 with semantic search using OpenAI embeddings and FAISS for high-quality content generation with retrieval-augmented generation (RAG).
 
 ## 🌐 Live Demo
 
 **Frontend:** [https://faiss-generation.vercel.app/](https://faiss-generation.vercel.app/)
 
-> **Note:** The backend runs on a free tier and scales to zero, so the first request after a quiet spell can take up to a minute while it wakes up.
+> **Note:** Frontend and backend both run on Vercel's free tier as serverless functions, so there's no server to wake up; a cold request adds about a second.
 
 ## Features
 
 - **GPT-4 Integration**: Advanced content generation using OpenAI's latest models
-- **Semantic Search**: Fast similarity search using Sentence-Transformers and FAISS
+- **Semantic Search**: Fast similarity search using OpenAI embeddings (`text-embedding-3-small`, 384-d) and FAISS
 - **RAG System**: Retrieval-augmented generation for contextually relevant responses
 - **High Performance**: Sub-200ms API response times with Redis caching
 - **Scalable Architecture**: Microservices design for production deployment
@@ -59,17 +59,18 @@ A production-ready Flask service that integrates OpenAI GPT-4 with semantic sear
 
 ## Deployment
 
-**Frontend (Vercel):** project root `frontend/`, build `npm run build`, output `dist`. Set `VITE_API_BASE_URL` to the backend URL. `frontend/vercel.json` rewrites all routes to `index.html` so deep links like `/chat` work.
+Both halves run on Vercel's free Hobby plan as two projects from this repo.
 
-**Backend (Google Cloud Run, recommended):** the `Dockerfile` installs CPU-only PyTorch and bakes the embedding model into the image, so cold starts take seconds. The container uses about 450 MB of RAM.
+**Backend (Vercel project, root `./`):** Vercel detects the Flask `app` in `app.py` and runs it as a Python function. There's no local ML model (embeddings come from OpenAI), so the bundle stays small and cold starts take about a second. `vercel.json` sets the function's max duration and keeps the frontend out of the bundle.
 
-```bash
-gcloud run deploy rag-backend --source . --region us-central1 \
-  --memory 1Gi --cpu 1 --min-instances 0 --max-instances 2 --allow-unauthenticated \
-  --set-env-vars OPENAI_MODEL=gpt-4.1-mini,OPENAI_API_KEY=sk-...,INGEST_API_KEY=<random-string>
-```
+- Environment variables: `OPENAI_API_KEY` (required), `OPENAI_MODEL` (default `gpt-4.1-mini`), `INGEST_API_KEY` (optional; enables `/api/ingest`)
+- The filesystem is read-only, so documents added through `/api/ingest` last only until the instance recycles. Commit permanent ones to `data/faiss_index_docs.json`. Metrics are per instance.
 
-Run the API tests (no OpenAI key or FAISS needed): `pip install flask flask-cors python-dotenv psutil colorlog && python tests/test_api.py`
+**Frontend (Vercel project, root `frontend/`):** build `npm run build`, output `dist`. Set `VITE_API_BASE_URL` to the backend project's URL. `frontend/vercel.json` rewrites all routes to `index.html` so deep links like `/chat` work.
+
+**Anywhere else:** the `Dockerfile` runs the same app with gunicorn on `$PORT` (Cloud Run, Fly, a VPS…).
+
+Run the tests: `pip install -r requirements.dev.txt && python -m pytest tests`
 
 ## Architecture
 
@@ -90,7 +91,7 @@ Run the API tests (no OpenAI key or FAISS needed): `pip install flask flask-cors
 ## Technology Stack
 
 - **Backend**: Flask, Python 3.9+
-- **AI/ML**: OpenAI GPT-4, Sentence-Transformers, FAISS
+- **AI/ML**: OpenAI (`gpt-4.1-mini`, `text-embedding-3-small`), FAISS
 - **Caching**: Redis
 - **Data Processing**: Beautiful Soup, NLTK, Pandas
 - **Monitoring**: Custom metrics and logging
