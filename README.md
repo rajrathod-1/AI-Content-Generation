@@ -6,7 +6,7 @@ A production-ready Flask service that integrates OpenAI GPT-4 with semantic sear
 
 **Frontend:** [https://faiss-generation.vercel.app/](https://faiss-generation.vercel.app/)
 
-> **⚠️ Important Note:** The backend server is hosted on **Railway.com's Free Tier**. Due to platform limitations, the server may pause or shut down after 30 days or if resource limits are reached. If the chat service is not responding, the server might need to be restarted. Please request a restart if you encounter issues.
+> **Note:** The backend runs on a free tier and scales to zero, so the first request after a quiet spell can take up to a minute while it wakes up.
 
 ## Features
 
@@ -53,9 +53,23 @@ A production-ready Flask service that integrates OpenAI GPT-4 with semantic sear
 
 - `POST /api/generate` - Generate content with RAG
 - `POST /api/search` - Semantic search in knowledge base
-- `POST /api/ingest` - Add new documents to knowledge base
+- `POST /api/ingest` - Add new documents to knowledge base (requires an `X-API-Key` header matching `INGEST_API_KEY`; disabled when that variable is unset)
 - `GET /api/health` - Service health check
 - `GET /api/metrics` - Performance metrics
+
+## Deployment
+
+**Frontend (Vercel):** project root `frontend/`, build `npm run build`, output `dist`. Set `VITE_API_BASE_URL` to the backend URL. `frontend/vercel.json` rewrites all routes to `index.html` so deep links like `/chat` work.
+
+**Backend (Google Cloud Run, recommended):** the `Dockerfile` installs CPU-only PyTorch and bakes the embedding model into the image, so cold starts take seconds. The container uses about 450 MB of RAM.
+
+```bash
+gcloud run deploy rag-backend --source . --region us-central1 \
+  --memory 1Gi --cpu 1 --min-instances 0 --max-instances 2 --allow-unauthenticated \
+  --set-env-vars OPENAI_MODEL=gpt-4.1-mini,OPENAI_API_KEY=sk-...,INGEST_API_KEY=<random-string>
+```
+
+Run the API tests (no OpenAI key or FAISS needed): `pip install flask flask-cors python-dotenv psutil colorlog && python tests/test_api.py`
 
 ## Architecture
 
