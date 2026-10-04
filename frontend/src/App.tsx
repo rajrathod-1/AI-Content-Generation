@@ -1,23 +1,30 @@
-import React from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
-import Layout from './components/layout/Layout'
+import { lazy, Suspense } from 'react'
+import { Navigate, Route, Routes, useLocation } from 'react-router'
+import { Footer, Header } from './components/Layout'
+import { useBackendStatus } from './lib/api'
 import HomePage from './pages/HomePage'
-import ChatPage from './pages/ChatPage'
-import AboutPage from './pages/AboutPage'
-import MetricsPage from './pages/MetricsPage'
 
-function App() {
+const ChatPage = lazy(() => import('./pages/ChatPage'))
+const MetricsPage = lazy(() => import('./pages/MetricsPage'))
+
+export default function App() {
+  const backend = useBackendStatus()
+  const { pathname } = useLocation()
+
   return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/chat" element={<ChatPage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/metrics" element={<MetricsPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Layout>
+    <div className="flex min-h-dvh flex-col">
+      <Header backend={backend} />
+      <main className="flex-1">
+        <Suspense>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/chat" element={<ChatPage backend={backend} />} />
+            <Route path="/metrics" element={<MetricsPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
+      </main>
+      {pathname !== '/chat' && <Footer />}
+    </div>
   )
 }
-
-export default App

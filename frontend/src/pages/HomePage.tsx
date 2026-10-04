@@ -1,242 +1,134 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { 
-  SparklesIcon, 
-  MagnifyingGlassIcon, 
-  DocumentTextIcon,
-  ChartBarIcon,
-  ArrowRightIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon
-} from '@heroicons/react/24/outline';
+import { lazy, Suspense } from 'react'
+import { Link } from 'react-router'
+import { ArrowRight } from 'lucide-react'
 
-const HomePage: React.FC = () => {
-  const features = [
-    {
-      icon: <SparklesIcon className="h-6 w-6" />,
-      title: "RAG-Powered Generation",
-      description: "Combines retrieval with generation for contextually accurate responses that go beyond simple ChatGPT interactions."
-    },
-    {
-      icon: <MagnifyingGlassIcon className="h-6 w-6" />,
-      title: "Real-time Web Crawling",
-      description: "Automatically fetches fresh data from the internet to ensure responses are current and relevant."
-    },
-    {
-      icon: <DocumentTextIcon className="h-6 w-6" />,
-      title: "Semantic Search",
-      description: "Uses advanced vector embeddings to find contextually similar content across your knowledge base."
-    },
-    {
-      icon: <ChartBarIcon className="h-6 w-6" />,
-      title: "Performance Analytics",
-      description: "Real-time metrics and monitoring to track system performance and response quality."
-    }
-  ];
+const VectorField = lazy(() => import('../components/VectorField'))
 
-  const advantages = [
-    "Gets latest information through web crawling",
-    "Provides source citations for transparency",
-    "Maintains context across conversations",
-    "Reduces hallucinations with grounded responses",
-    "Customizable knowledge base",
-    "Cost-effective compared to fine-tuning"
-  ];
+const STEPS = [
+  { title: 'Classify', body: 'Small talk gets a direct reply. Questions that need facts go on to retrieval.', tag: 'query_classifier' },
+  { title: 'Search the web', body: 'Fresh results are pulled from public search and Wikipedia, then cleaned to plain text.', tag: 'realtime_search' },
+  { title: 'Retrieve', body: 'The question is embedded and matched against the FAISS index by cosine similarity.', tag: 'MiniLM-L6 · 384-d' },
+  { title: 'Augment', body: 'The strongest passages, web first, are packed into a ~4k-token context.', tag: 'context builder' },
+  { title: 'Generate', body: 'The model answers from that context and returns the sources it was given.', tag: 'OpenAI' },
+]
 
+const COMPARE = [
+  ['Knowledge', 'Frozen at its training cutoff', 'Fetched when you ask'],
+  ['Citations', 'None', 'Every answer lists its sources'],
+  ['Grounding', 'Free to fill gaps with guesses', 'Written from retrieved passages'],
+  ['Your documents', 'Invisible to the model', 'Ingested into the vector index'],
+]
+
+const STACK = ['React 19', 'Three.js', 'Flask', 'FAISS', 'Sentence-Transformers', 'OpenAI', 'Redis']
+
+export default function HomePage() {
   return (
-    <div className="min-h-screen">
-      {/* Disclaimer Banner */}
-      <div className="bg-yellow-50 border-b border-yellow-200 px-4 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-center text-sm text-yellow-800">
-          <ExclamationTriangleIcon className="h-5 w-5 mr-2 text-yellow-600" />
-          <p>
-            <strong>Note:</strong> The backend server is running on Railway.com's free tier. It may pause or close due to inactivity or limits. 
-            If the service is unresponsive, it can be restarted on request.
+    <>
+      <section className="relative isolate overflow-hidden border-b border-line">
+        <div className="hero-grid absolute inset-0 -z-20" />
+        <Suspense>
+          <VectorField className="absolute inset-0 -z-10 opacity-50 lg:left-[35%] lg:opacity-100" />
+        </Suspense>
+        <div className="absolute inset-0 -z-10 bg-canvas/40 lg:bg-transparent lg:bg-linear-to-r lg:from-canvas lg:from-25% lg:via-canvas/60 lg:via-40% lg:to-transparent lg:to-65%" />
+
+        <div className="mx-auto flex max-w-6xl flex-col justify-center px-4 py-24 sm:px-6 sm:py-32 lg:min-h-[calc(100dvh-3.5rem)]">
+          <p className="eyebrow">Retrieval-augmented generation</p>
+          <h1 className="mt-5 max-w-xl text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
+            Answers that show their sources.
+          </h1>
+          <p className="mt-6 max-w-lg text-lg text-pretty text-muted">
+            Ask a question. The assistant searches the live web and a FAISS vector index, then writes an answer grounded in
+            what it found, with links you can check.
+          </p>
+          <div className="mt-10 flex flex-wrap gap-3">
+            <Link to="/chat" className="btn-primary">
+              Open the assistant <ArrowRight className="size-4" aria-hidden="true" />
+            </Link>
+            <a href="#how" className="btn-ghost">
+              How it works
+            </a>
+          </div>
+          <p className="mt-20 max-w-xs font-mono text-xs leading-relaxed text-muted">
+            fig. 1 · a query vector (bright) linked to its six nearest neighbours in embedding space
           </p>
         </div>
-      </div>
-
-      {/* Hero Section */}
-      <section className="relative py-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-cyan-50"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center"
-          >
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-              The Future of
-              <span className="bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                {" "}AI Content Generation
-              </span>
-            </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              Experience the power of Retrieval-Augmented Generation (RAG) - an intelligent AI system 
-              that combines real-time web crawling with advanced semantic search to deliver accurate, 
-              contextual, and up-to-date responses.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                to="/chat"
-                className="btn-primary text-lg px-8 py-4 flex items-center justify-center space-x-2"
-              >
-                <span>Try RAG Assistant</span>
-                <ArrowRightIcon className="h-5 w-5" />
-              </Link>
-              <Link
-                to="/about"
-                className="btn-outline text-lg px-8 py-4"
-              >
-                Learn About RAG
-              </Link>
-            </div>
-          </motion.div>
-        </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Why Choose RAG Over Standard ChatGPT?
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Our RAG system provides significant advantages over traditional language models
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className="card hover:shadow-lg transition-shadow duration-300"
-              >
-                <div className="flex items-center justify-center w-12 h-12 bg-blue-100 text-blue-600 rounded-lg mb-4">
-                  {feature.icon}
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  {feature.title}
-                </h3>
-                <p className="text-gray-600">
-                  {feature.description}
-                </p>
-              </motion.div>
+      <section id="how" className="scroll-mt-14 border-b border-line">
+        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+          <p className="eyebrow">How it works</p>
+          <h2 className="mt-3 max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+            From question to cited answer in five steps.
+          </h2>
+          <ol className="mt-12 grid gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-5">
+            {STEPS.map((step, i) => (
+              <li key={step.title} className="reveal flex flex-col bg-canvas p-6 sm:last:col-span-2 lg:last:col-span-1">
+                <span className="font-mono text-xs text-accent">{String(i + 1).padStart(2, '0')}</span>
+                <h3 className="mt-8 font-medium">{step.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted">{step.body}</p>
+                <p className="mt-auto pt-8 font-mono text-xs text-muted">{step.tag}</p>
+              </li>
             ))}
-          </div>
+          </ol>
         </div>
       </section>
 
-      {/* Advantages Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
-                RAG Advantages Over ChatGPT
-              </h2>
-              <p className="text-lg text-gray-600 mb-8">
-                While ChatGPT is trained on static data with a knowledge cutoff, our RAG system 
-                continuously updates its knowledge base through real-time web crawling and semantic search.
-              </p>
-              <ul className="space-y-4">
-                {advantages.map((advantage, index) => (
-                  <motion.li
-                    key={index}
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                    viewport={{ once: true }}
-                    className="flex items-center space-x-3"
-                  >
-                    <CheckCircleIcon className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-gray-700">{advantage}</span>
-                  </motion.li>
-                ))}
-              </ul>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
-              className="relative"
-            >
-              <div className="bg-white rounded-2xl shadow-xl p-8">
-                <div className="space-y-6">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                      <span className="text-red-600 font-bold">GPT</span>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">Standard ChatGPT</h3>
-                      <p className="text-sm text-gray-500">Knowledge cutoff: Training data only</p>
-                    </div>
-                  </div>
-                  <div className="border-t pt-6">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <span className="text-blue-600 font-bold">RAG</span>
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">Our RAG System</h3>
-                        <p className="text-sm text-gray-500">Real-time knowledge: Always up-to-date</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-cyan-600">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-              Ready to Experience the Difference?
+      <section className="border-b border-line">
+        <div className="mx-auto grid max-w-6xl gap-12 px-4 py-20 sm:px-6 sm:py-28 lg:grid-cols-[1fr_1.4fr] lg:items-center">
+          <div>
+            <p className="eyebrow">Why retrieval</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+              A plain chatbot answers from memory. This one looks things up.
             </h2>
-            <p className="text-xl text-blue-100 mb-8">
-              See how RAG-powered AI delivers more accurate, contextual, and up-to-date responses
+            <p className="mt-5 text-pretty text-muted">
+              Retrieval gives the model the passages it needs at question time, so answers can be current and you can trace each
+              claim back to where it came from.
             </p>
-            <Link
-              to="/chat"
-              className="inline-flex items-center px-8 py-4 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-50 transition-colors duration-200 space-x-2"
-            >
-              <span>Start Chatting Now</span>
-              <ArrowRightIcon className="h-5 w-5" />
-            </Link>
-          </motion.div>
+          </div>
+          <div className="reveal overflow-x-auto rounded-xl border border-line">
+            <table className="w-full min-w-md text-left text-sm">
+              <thead className="border-b border-line font-mono text-xs text-muted">
+                <tr>
+                  <td className="p-4" />
+                  <th scope="col" className="p-4 font-normal">Plain LLM</th>
+                  <th scope="col" className="p-4 font-normal text-accent">This assistant</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {COMPARE.map(([label, plain, rag]) => (
+                  <tr key={label}>
+                    <th scope="row" className="p-4 font-medium">{label}</th>
+                    <td className="p-4 text-muted">{plain}</td>
+                    <td className="p-4">{rag}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
-    </div>
-  );
-};
 
-export default HomePage;
+      <section>
+        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+          <div className="panel relative isolate overflow-hidden px-6 py-14 sm:px-12">
+            <div className="hero-grid absolute inset-0 -z-10 opacity-60" />
+            <h2 className="max-w-xl text-3xl font-semibold tracking-tight text-balance">
+              Ask it about something that happened this week.
+            </h2>
+            <p className="mt-4 max-w-lg text-pretty text-muted">
+              The backend runs on a free tier, so the first request after a quiet spell can take up to a minute while it wakes up.
+            </p>
+            <Link to="/chat" className="btn-primary mt-8">
+              Open the assistant <ArrowRight className="size-4" aria-hidden="true" />
+            </Link>
+            <ul aria-label="Built with" className="mt-12 flex flex-wrap gap-x-6 gap-y-2 font-mono text-xs text-muted">
+              {STACK.map((s) => (
+                <li key={s}>{s}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+    </>
+  )
+}
