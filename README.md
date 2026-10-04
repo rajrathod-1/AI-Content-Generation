@@ -65,6 +65,8 @@ Both halves run on Vercel's free Hobby plan as two projects from this repo.
 
 - Environment variables: `OPENAI_API_KEY` (required), `OPENAI_MODEL` (default `gpt-4.1-mini`), `INGEST_API_KEY` (optional; enables `/api/ingest`)
 - The filesystem is read-only, so documents added through `/api/ingest` last only until the instance recycles. Commit permanent ones to `data/faiss_index_docs.json`. Metrics are per instance.
+- Live web results come from Wikipedia's search API: free, keyless, and reliable from servers. Web and index candidates are scored with the same embedding model, and only those within 80% of the best match are cited.
+- Free model option: point `OPENAI_BASE_URL` at Gemini's OpenAI-compatible endpoint (`https://generativelanguage.googleapis.com/v1beta/openai/`) with a free AI Studio key, `OPENAI_MODEL=gemini-3.5-flash-lite` and `EMBEDDINGS_MODEL=gemini-embedding-001`.
 
 **Frontend (Vercel project, root `frontend/`):** build `npm run build`, output `dist`. Set `VITE_API_BASE_URL` to the backend project's URL. `frontend/vercel.json` rewrites all routes to `index.html` so deep links like `/chat` work.
 

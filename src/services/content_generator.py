@@ -17,6 +17,22 @@ from .cache_service import CacheService
 from .realtime_search import RealTimeWebSearcher
 from .query_classifier import QueryClassifier, QueryType
 
+# Keep sources scoring at least 80% of the best match. Cosine scales differ between embedding
+# models (unrelated text scores ~0.5 with Gemini, ~0.1 with OpenAI); ratios hold up across them.
+# Tuned on real Wikipedia candidates: 0.9 dropped good runners-up, 0.7 let off-topic pages in.
+RELEVANCE_RATIO = 0.8
+MAX_SOURCES = 5
+
+
+def select_sources(candidates: List[Dict], limit: int = MAX_SOURCES, ratio: float = RELEVANCE_RATIO) -> List[Dict]:
+    """The closest passages from the web and the index together, best first, weak matches dropped."""
+    ranked = sorted(candidates, key=lambda s: s.get('score', 0), reverse=True)
+    if not ranked or ranked[0].get('score', 0) <= 0:  # scoring unavailable: keep search order
+        return ranked[:limit]
+    floor = ranked[0]['score'] * ratio
+    return [s for s in ranked if s.get('score', 0) >= floor][:limit]
+
+
 @dataclass
 class RAGResult:
     """Result from RAG content generation"""
@@ -122,8 +138,7 @@ class ContentGenerator:
             web_search_start = time.time()
             
             try:
-                web_results = self.web_searcher.search_web(query, num_results=5)
-                web_search_time = time.time() - web_search_start
+                web_results = self.web_searcher.search_web(query, num_results=MAX_SOURCES)
                 
                 # Convert web results to sources format
                 for result in web_results:
@@ -136,6 +151,12 @@ class ContentGenerator:
                         'source_type': 'web'
                     })
                 
+                # Score web hits with the index's embedding model so web and index sources compare fairly
+                texts = [f"{s['title']}. {s['content'][:1000]}" for s in web_sources]
+                for source, score in zip(web_sources, self.vector_service.similarities(query, texts)):
+                    source['score'] = score
+                
+                web_search_time = time.time() - web_search_start
                 self.logger.info(f"Found {len(web_sources)} web sources in {web_search_time:.2f}s")
             except Exception as e:
                 self.logger.warning(f"Web search failed: {e}")
@@ -146,21 +167,17 @@ class ContentGenerator:
         search_results = self.vector_service.search(query, search_limit)
         kb_search_time = time.time() - search_start
         
-        # Step 6: Combine web sources and knowledge base sources
-        all_sources = web_sources.copy()
-        
-        # Only use knowledge base if web search didn't find enough relevant sources
-        if len(web_sources) < 2 and search_results:
-            context, kb_sources = self._prepare_context(search_results, query)
-            # Filter knowledge base sources by relevance to avoid irrelevant results
-            relevant_kb_sources = [
-                source for source in kb_sources 
-                if source.get('score', 0) >= 0.3  # Higher threshold for KB sources
-            ]
-            all_sources.extend(relevant_kb_sources)
-        
-        # Prioritize web sources for freshness
-        all_sources.sort(key=lambda x: (x.get('source_type') == 'web', x.get('score', 0)), reverse=True)
+        # Step 6: Keep the closest passages from the web and the index together
+        kb_sources = [{
+            'id': r.id,
+            'title': r.title,
+            'url': r.url,
+            'snippet': r.content[:200],
+            'content': r.content,
+            'score': r.score,
+            'source_type': 'knowledge_base'
+        } for r in search_results]
+        all_sources = select_sources(web_sources + kb_sources)
         
         # Prepare combined context; the numbered sources are the ones the answer can cite
         combined_context, cited_sources = self._prepare_combined_context(all_sources, query)
@@ -194,8 +211,8 @@ class ContentGenerator:
             'cached': False,
             'model_used': generation_result.model,
             'finish_reason': generation_result.finish_reason,
-            'web_sources_count': len(web_sources),
-            'kb_sources_count': len(all_sources) - len(web_sources),
+            'web_sources_count': sum(s.get('source_type') == 'web' for s in cited_sources),
+            'kb_sources_count': sum(s.get('source_type') == 'knowledge_base' for s in cited_sources),
             'classification': classification_reason,
             'used_rag': True
         }
