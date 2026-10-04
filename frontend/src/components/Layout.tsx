@@ -1,5 +1,5 @@
 import { Link, NavLink } from 'react-router'
-import type { BackendState } from '../lib/api'
+import type { BackendState } from '../api'
 
 const NAV = [
   { to: '/', label: 'Home' },

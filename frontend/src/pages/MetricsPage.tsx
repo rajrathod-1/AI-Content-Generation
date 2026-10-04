@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
-import { api, type Metrics } from '../lib/api'
+import { api, type Metrics } from '../api'
 
 const pct = (ratio: number) => `${(ratio * 100).toFixed(1)}%`
 const ms = (v: number) => `${Math.round(v).toLocaleString()} ms`

@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router'
 import { Footer, Header } from './components/Layout'
-import { useBackendStatus } from './lib/api'
+import { useBackendStatus } from './api'
 import HomePage from './pages/HomePage'
 
 const ChatPage = lazy(() => import('./pages/ChatPage'))

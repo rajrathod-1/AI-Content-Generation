@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { ArrowUp, Check, Copy, RotateCcw, SquarePen } from 'lucide-react'
-import { api, type BackendState, type GenerateResponse, type Source } from '../lib/api'
+import { api, type BackendState, type GenerateResponse, type Source } from '../api'
 
 type Message =
   | { id: number; role: 'user'; text: string }
