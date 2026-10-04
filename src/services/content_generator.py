@@ -162,8 +162,8 @@ class ContentGenerator:
         # Prioritize web sources for freshness
         all_sources.sort(key=lambda x: (x.get('source_type') == 'web', x.get('score', 0)), reverse=True)
         
-        # Prepare combined context
-        combined_context = self._prepare_combined_context(all_sources, query)
+        # Prepare combined context; the numbered sources are the ones the answer can cite
+        combined_context, cited_sources = self._prepare_combined_context(all_sources, query)
         
         if not combined_context:
             self.logger.warning(f"No relevant context found for query: {query}")
@@ -183,7 +183,7 @@ class ContentGenerator:
         # Step 8: Prepare final result with sources
         result = {
             'content': generation_result.content,
-            'sources': all_sources[:5],  # Limit to top 5 sources for display
+            'sources': cited_sources,  # exactly the sources numbered [1]..[n] in the prompt
             'query': query,
             'tokens_used': generation_result.tokens_used,
             'response_time': time.time() - start_time,
@@ -259,15 +259,13 @@ class ContentGenerator:
         context = "\n\n".join(context_parts)
         return context, sources
     
-    def _prepare_combined_context(self, sources: List[Dict], query: str) -> str:
-        """Prepare combined context from web and knowledge base sources"""
-        if not sources:
-            return ""
-        
+    def _prepare_combined_context(self, sources: List[Dict], query: str, max_sources: int = 8) -> Tuple[str, List[Dict]]:
+        """Number sources [1]..[n] for the prompt and return exactly the ones included, so citations match."""
         context_parts = []
+        used = []
         current_length = 0
         
-        for i, source in enumerate(sources):
+        for source in sources:
             content = source.get('content', source.get('snippet', ''))
             if not content:
                 continue
@@ -275,16 +273,15 @@ class ContentGenerator:
             # Estimate token count
             content_tokens = len(content.split()) * 1.3
             
-            if current_length + content_tokens > self.max_context_length:
+            if current_length + content_tokens > self.max_context_length or len(used) >= max_sources:
                 break
             
-            # Add source type prefix for clarity
-            source_type = source.get('source_type', 'unknown')
-            context_part = f"[{source_type.upper()} SOURCE {i+1}]: {content}"
-            context_parts.append(context_part)
+            n = len(used) + 1
+            context_parts.append(f"[{n}] {source.get('title', 'Untitled')} ({source.get('source_type', 'unknown')}): {content}")
+            used.append(source)
             current_length += content_tokens
         
-        return "\n\n".join(context_parts)
+        return "\n\n".join(context_parts), used
     
     def _generate_without_context(self, query: str, max_length: int, temperature: float) -> Dict:
         """Generate content without RAG context when no relevant sources found"""
