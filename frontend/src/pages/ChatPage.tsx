@@ -313,12 +313,14 @@ function Footnote({ id, n, source, on, onHover }: { id: string; n: number; sourc
           <span className="truncate">{host ?? 'knowledge base'}</span>
           <span>·</span>
           <span>{source.source_type === 'web' ? 'web' : 'index'}</span>
-          <span className="ml-auto inline-flex shrink-0 items-center gap-2">
-            <span className="h-px w-12 bg-rule">
-              <span className="block h-px bg-signal" style={{ width: `${match}%` }} />
+          {source.score > 0 && (
+            <span className="ml-auto inline-flex shrink-0 items-center gap-2">
+              <span className="h-px w-12 bg-rule">
+                <span className="block h-px bg-signal" style={{ width: `${match}%` }} />
+              </span>
+              {match}%
             </span>
-            {match}%
-          </span>
+          )}
         </span>
       </span>
     </>

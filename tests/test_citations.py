@@ -58,6 +58,23 @@ def test_cap_and_token_budget():
     assert used == [] and context == ''  # over budget: nothing numbered, caller falls back
 
 
+def test_select_sources_keeps_only_close_matches_best_first():
+    candidates = [
+        {'title': 'kb agriculture', 'score': 0.49},
+        {'title': 'web hash function', 'score': 0.78},
+        {'title': 'kb blockchain', 'score': 0.57},
+        {'title': 'web cryptographic hash', 'score': 0.74},
+    ]
+    assert [s['title'] for s in cg.select_sources(candidates)] == ['web hash function', 'web cryptographic hash']
+    assert len(cg.select_sources([{'score': 0.9}] * 9)) == 5
+
+
+def test_select_sources_without_scores_keeps_search_order():
+    unscored = [{'title': 'a', 'score': 0.0}, {'title': 'b', 'score': 0.0}]
+    assert [s['title'] for s in cg.select_sources(unscored)] == ['a', 'b']
+    assert cg.select_sources([]) == []
+
+
 if __name__ == '__main__':
     for name, fn in list(globals().items()):
         if name.startswith('test_'):

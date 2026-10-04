@@ -168,6 +168,17 @@ class VectorService:
         self.logger.info(f"Search for '{query}' returned {len(results)} results")
         return results
 
+    def similarities(self, query: str, texts: List[str]) -> List[float]:
+        """Cosine similarity of each text to the query, with the index's embedding model (0 if embedding fails)."""
+        if not texts:
+            return []
+        try:
+            vectors = self._embed([query] + texts)
+        except Exception as e:
+            self.logger.error(f"Scoring failed: {e}")
+            return [0.0] * len(texts)
+        return [float(score) for score in vectors[1:] @ vectors[0]]
+    
     def search_by_filters(self, query: str, filters: Dict, limit: Optional[int] = None) -> List[SearchResult]:
         """Search with metadata filters"""
         matches = [

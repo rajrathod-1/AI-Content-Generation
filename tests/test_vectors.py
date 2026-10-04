@@ -69,6 +69,16 @@ def test_search_ranks_the_closest_document_first():
         assert [r.id for r in results][0] == 'b' and len(results) == 2
 
 
+def test_similarities_score_texts_against_the_query():
+    with tempfile.TemporaryDirectory() as tmp:
+        service, embeddings = make(write_docs(tmp, DOCS))
+        scores = service.similarities('python release', ['python release notes', 'bread and yeast'])
+        assert scores[0] > scores[1]
+        embeddings.fail = True
+        assert service.similarities('python', ['a', 'b']) == [0.0, 0.0]
+        assert service.similarities('python', []) == []
+
+
 def test_failed_startup_embedding_heals_on_next_search():
     with tempfile.TemporaryDirectory() as tmp:
         service, embeddings = make(write_docs(tmp, DOCS), fail=True)
