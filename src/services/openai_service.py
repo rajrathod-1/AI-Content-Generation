@@ -86,7 +86,7 @@ class OpenAIService:
     def __init__(self, config: Dict):
         self.config = config
         self.api_key = config.get('OPENAI_API_KEY')
-        self.model = config.get('OPENAI_MODEL', 'gpt-4-turbo-preview')
+        self.model = config.get('OPENAI_MODEL', 'gpt-4.1-mini')
         self.max_tokens = config.get('OPENAI_MAX_TOKENS', 2000)
         self.temperature = config.get('OPENAI_TEMPERATURE', 0.7)
         self.timeout = config.get('REQUEST_TIMEOUT', 30)
@@ -127,7 +127,7 @@ class OpenAIService:
         
         # Use defaults if not specified
         max_tokens = max_tokens or self.max_tokens
-        temperature = temperature or self.temperature
+        temperature = self.temperature if temperature is None else temperature  # 0 is a valid temperature
         model = model or self.model
         
         # Retry logic with exponential backoff
@@ -227,7 +227,7 @@ class OpenAIService:
     ):
         """Generate content with streaming response"""
         max_tokens = max_tokens or self.max_tokens
-        temperature = temperature or self.temperature
+        temperature = self.temperature if temperature is None else temperature  # 0 is a valid temperature
         model = model or self.model
         
         try:

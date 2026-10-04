@@ -18,7 +18,7 @@ class Config:
     
     # OpenAI Configuration
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-    OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4-0125-preview')
+    OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4.1-mini')  # gpt-4-0125-preview was shut down 2026-03-26
     OPENAI_MAX_TOKENS = int(os.getenv('OPENAI_MAX_TOKENS', 1000))
     OPENAI_TEMPERATURE = float(os.getenv('OPENAI_TEMPERATURE', 0.7))
     
