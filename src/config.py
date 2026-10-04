@@ -31,7 +31,7 @@ class Config:
     
     # Vector Database Configuration
     FAISS_INDEX_PATH = os.getenv('FAISS_INDEX_PATH', './data/faiss_index')
-    EMBEDDINGS_MODEL = os.getenv('EMBEDDINGS_MODEL', 'all-MiniLM-L6-v2')
+    EMBEDDINGS_MODEL = os.getenv('EMBEDDINGS_MODEL', 'text-embedding-3-small')  # OpenAI; VECTOR_DIMENSION is passed as `dimensions`
     VECTOR_DIMENSION = int(os.getenv('VECTOR_DIMENSION', 384))
     MAX_SEARCH_RESULTS = int(os.getenv('MAX_SEARCH_RESULTS', 10))
     USE_LIGHTWEIGHT_MODE = os.getenv('USE_LIGHTWEIGHT_MODE', 'False').lower() == 'true'

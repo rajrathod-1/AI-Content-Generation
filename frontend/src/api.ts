@@ -46,7 +46,7 @@ async function request<T>(path: string, init: RequestInit = {}, timeoutMs = 90_0
       signal: AbortSignal.timeout(timeoutMs),
     })
   } catch {
-    throw new Error('Could not reach the backend. It may be asleep on its free tier, so try again in a minute.')
+    throw new Error('Could not reach the backend. Check your connection and try again.')
   }
   const body = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`)

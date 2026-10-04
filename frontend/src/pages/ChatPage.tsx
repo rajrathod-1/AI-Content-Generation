@@ -172,7 +172,7 @@ export default function ChatPage({ backend }: { backend: BackendState }) {
       <form onSubmit={onSubmit} className="gutter fixed inset-x-0 bottom-0 z-40 bg-linear-to-t from-ink via-ink/95 to-transparent pt-16 pb-6">
         <div className="max-w-[44rem] lg:ml-[6vw]">
           {backend === 'offline' && (
-            <p className="mb-3 font-mono text-xs text-warn">The backend isn't responding. It may be asleep on its free tier, so give it a minute.</p>
+            <p className="mb-3 font-mono text-xs text-warn">The backend isn't responding right now. Try again in a moment.</p>
           )}
           <div className="flex items-end gap-4 border-b border-rule transition-colors focus-within:border-paper">
             <label htmlFor="prompt" className="sr-only">

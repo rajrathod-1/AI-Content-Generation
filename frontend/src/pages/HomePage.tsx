@@ -118,11 +118,11 @@ export default function HomePage() {
           <p className="eyebrow fade">01 — Embed</p>
           <Split as="h2" text="Every passage becomes a *point.*" className="headline mt-5 max-w-3xl" />
           <p className="lede fade mt-8 max-w-md" style={{ '--d': 0.3 } as React.CSSProperties}>
-            A sentence-transformer turns each passage into 384 numbers. Passages that mean similar things land close together, so
+            An embedding model turns each passage into 384 numbers. Passages that mean similar things land close together, so
             meaning becomes distance.
           </p>
           <p className="eyebrow fade mt-6" style={{ '--d': 0.45 } as React.CSSProperties}>
-            all-MiniLM-L6-v2 · 384 dimensions, drawn here in three
+            text-embedding-3-small · 384 dimensions, drawn here in three
           </p>
         </div>,
       )}
@@ -273,7 +273,6 @@ function AskChapter() {
       <footer className="absolute inset-x-5 bottom-6 flex flex-col gap-2 font-mono text-[0.6875rem] tracking-wide text-dim sm:inset-x-10 sm:flex-row sm:justify-between lg:inset-x-16">
         <span>Built by Raj Rathod · Flask · FAISS · OpenAI · React · Three.js</span>
         <span className="flex gap-5">
-          <span className="hidden md:inline">Free-tier backend: the first answer can take a minute.</span>
           <a href="https://github.com/rajrathod-1/AI-Content-Generation" target="_blank" rel="noreferrer" className="hover:text-paper">
             GitHub
           </a>

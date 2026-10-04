@@ -43,7 +43,7 @@ class CacheService:
         self.redis_available = False
         try:
             self.redis_client = self._create_connection()
-            self.redis_available = True
+            self.redis_available = self.redis_client is not None
         except Exception as e:
             self.logger.warning(f"Redis not available, running without cache: {str(e)}")
             self.redis_available = False
@@ -102,7 +102,8 @@ class CacheService:
             return client
             
         except Exception as e:
-            self.logger.error(f"Failed to connect to Redis: {str(e)}")
+            # Expected on hosts without Redis (e.g. serverless): every cache call becomes a no-op
+            self.logger.warning(f"Redis unavailable, caching disabled: {str(e)}")
             return None
     
     def _serialize_data(self, data: Any) -> bytes:

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The AI Content Generation Service is a production-ready Flask API that integrates OpenAI GPT-4 with semantic search using Sentence-Transformers and FAISS for high-quality, contextually-aware content generation.
+The AI Content Generation Service is a production-ready Flask API that integrates OpenAI GPT-4 with semantic search using OpenAI embeddings and FAISS for high-quality, contextually-aware content generation.
 
 ## Key Features
 
