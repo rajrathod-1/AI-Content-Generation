@@ -20,7 +20,7 @@ from src.utils.logger import setup_logger
 from src.utils.metrics import MetricsCollector
 
 MAX_QUERY_CHARS = 2000
-SOURCE_FIELDS = ('title', 'url', 'snippet', 'score', 'source_type')
+SOURCE_FIELDS = ('title', 'url', 'snippet', 'score', 'source_type', 'meta')
 
 
 def clamp(value, low, high, default):
@@ -56,7 +56,7 @@ def create_app(config_name='default'):
     cache_service = CacheService(app.config)
     openai_service = OpenAIService(app.config)
     vector_service = VectorService(app.config)
-    content_generator = ContentGenerator(openai_service, vector_service, cache_service)
+    content_generator = ContentGenerator(openai_service, vector_service, cache_service, app.config)
     metrics_collector = MetricsCollector()
     
     @app.route('/')

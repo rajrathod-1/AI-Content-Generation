@@ -48,7 +48,8 @@ class VectorService:
                 model=self.model_name, input=texts[start:start + 256], dimensions=self.vector_dim)
             vectors.extend(item.embedding for item in response.data)
         arr = np.array(vectors, dtype='float32')
-        return arr / np.linalg.norm(arr, axis=1, keepdims=True)
+        norms = np.linalg.norm(arr, axis=1, keepdims=True)
+        return arr / np.where(norms == 0, 1, norms)  # an all-zero vector would otherwise become NaN and scramble ranking
 
     def _reindex(self):
         """Embed every stored document into a fresh index."""

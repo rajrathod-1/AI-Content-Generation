@@ -77,7 +77,7 @@ def test_generate_validates_and_clamps():
     assert calls == {'query': 'hi', 'max_length': 1500, 'temperature': app.config['OPENAI_TEMPERATURE']}
 
     body = res.get_json()
-    assert body['sources'] == [{'title': 't', 'url': 'https://x.dev', 'snippet': 's', 'score': 0.9, 'source_type': 'web'}]
+    assert body['sources'] == [{'title': 't', 'url': 'https://x.dev', 'snippet': 's', 'score': 0.9, 'source_type': 'web', 'meta': None}]
     assert body['model'] == 'gpt-4.1-mini' and body['used_rag'] is True and body['cached'] is False
 
 

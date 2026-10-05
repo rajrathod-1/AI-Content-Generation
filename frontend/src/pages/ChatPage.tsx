@@ -248,12 +248,7 @@ function Answer({ text, res }: { text: string; res: GenerateResponse }) {
   const [copied, setCopied] = useState(false)
   const id = useRef(Math.random().toString(36).slice(2, 7)).current
 
-  const meta = [
-    `${Math.round(res.response_time_ms).toLocaleString()} ms`,
-    res.model,
-    res.cached && 'cached',
-    !res.sources.length && res.used_rag === false && 'no retrieval',
-  ].filter(Boolean)
+  const meta = [`${Math.round(res.response_time_ms).toLocaleString()} ms`, res.model, res.cached && 'cached'].filter(Boolean)
 
   function copy() {
     navigator.clipboard.writeText(text).then(() => {
@@ -264,6 +259,11 @@ function Answer({ text, res }: { text: string; res: GenerateResponse }) {
 
   return (
     <article>
+      {res.sources.length === 0 && res.model !== 'conversational' && (
+        <p className="mb-5 border-l border-warn pl-4 font-mono text-xs leading-relaxed text-warn">
+          No sources matched this question, so this answer comes from the model's general knowledge and isn't verified.
+        </p>
+      )}
       <div className="prose-answer">
         <CiteContext value={{ hover, setHover, id }}>
           <Markdown remarkPlugins={[remarkGfm]} components={MARKDOWN_COMPONENTS}>
@@ -301,6 +301,8 @@ function hostname(url: string) {
   }
 }
 
+const TYPE_LABEL: Record<string, string> = { web: 'web', paper: 'paper', knowledge_base: 'index' }
+
 function Footnote({ id, n, source, on, onHover }: { id: string; n: number; source: Source; on: boolean; onHover: (n: number) => void }) {
   const host = hostname(source.url)
   const match = Math.round(Math.min(Math.max(source.score, 0), 1) * 100)
@@ -310,9 +312,9 @@ function Footnote({ id, n, source, on, onHover }: { id: string; n: number; sourc
       <span className="min-w-0 flex-1">
         <span className="line-clamp-2 text-base font-light">{source.title || 'Untitled source'}</span>
         <span className="mt-1 flex items-center gap-3 font-mono text-[0.6875rem] text-dim">
-          <span className="truncate">{host ?? 'knowledge base'}</span>
+          <span className={source.source_type === 'paper' ? 'text-signal' : ''}>{TYPE_LABEL[source.source_type ?? 'web']}</span>
           <span>·</span>
-          <span>{source.source_type === 'web' ? 'web' : 'index'}</span>
+          <span className="truncate">{source.meta || host || 'knowledge base'}</span>
           {source.score > 0 && (
             <span className="ml-auto inline-flex shrink-0 items-center gap-2">
               <span className="h-px w-12 bg-rule">

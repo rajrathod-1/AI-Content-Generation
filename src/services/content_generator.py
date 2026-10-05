@@ -21,16 +21,23 @@ from .query_classifier import QueryClassifier, QueryType
 # models (unrelated text scores ~0.5 with Gemini, ~0.1 with OpenAI); ratios hold up across them.
 # Tuned on real Wikipedia candidates: 0.9 dropped good runners-up, 0.7 let off-topic pages in.
 RELEVANCE_RATIO = 0.8
+# Papers must be nearly the best match, so they only appear for research-relevant questions
+# (a World Cup question shouldn't cite a paper on Qatar's urban development).
+PAPER_RELEVANCE_RATIO = 0.9
 MAX_SOURCES = 5
 
 
-def select_sources(candidates: List[Dict], limit: int = MAX_SOURCES, ratio: float = RELEVANCE_RATIO) -> List[Dict]:
-    """The closest passages from the web and the index together, best first, weak matches dropped."""
+def select_sources(candidates: List[Dict], limit: int = MAX_SOURCES, ratio: float = RELEVANCE_RATIO,
+                   paper_ratio: float = PAPER_RELEVANCE_RATIO) -> List[Dict]:
+    """The closest passages from every source together, best first, weak matches dropped."""
     ranked = sorted(candidates, key=lambda s: s.get('score', 0), reverse=True)
     if not ranked or ranked[0].get('score', 0) <= 0:  # scoring unavailable: keep search order
         return ranked[:limit]
-    floor = ranked[0]['score'] * ratio
-    return [s for s in ranked if s.get('score', 0) >= floor][:limit]
+    best = ranked[0]['score']
+    return [
+        s for s in ranked
+        if s.get('score', 0) >= best * (paper_ratio if s.get('source_type') == 'paper' else ratio)
+    ][:limit]
 
 
 @dataclass
@@ -48,14 +55,19 @@ class RAGResult:
 class ContentGenerator:
     """High-level content generation service with RAG capabilities and real-time web search"""
     
-    def __init__(self, openai_service: OpenAIService, vector_service: VectorService, cache_service: CacheService):
+    def __init__(self, openai_service: OpenAIService, vector_service: VectorService, cache_service: CacheService,
+                 config: Optional[Dict] = None):
         self.openai_service = openai_service
         self.vector_service = vector_service
         self.cache_service = cache_service
         self.logger = logging.getLogger(__name__)
+        config = config or {}
         
-        # Initialize real-time web search
-        self.web_searcher = RealTimeWebSearcher()
+        # Live sources: Wikipedia and research papers always; the open web when a Tavily key is set
+        self.web_searcher = RealTimeWebSearcher(
+            tavily_api_key=config.get('TAVILY_API_KEY'),
+            openalex_api_key=config.get('OPENALEX_API_KEY'),
+        )
         
         # Initialize query classifier
         self.query_classifier = QueryClassifier()
@@ -138,7 +150,7 @@ class ContentGenerator:
             web_search_start = time.time()
             
             try:
-                web_results = self.web_searcher.search_web(query, num_results=MAX_SOURCES)
+                web_results = self.web_searcher.search(query, num_results=MAX_SOURCES)
                 
                 # Convert web results to sources format
                 for result in web_results:
@@ -148,7 +160,8 @@ class ContentGenerator:
                         'snippet': result['snippet'],
                         'content': result.get('content', result['snippet']),
                         'score': result['score'],
-                        'source_type': 'web'
+                        'source_type': result.get('source_type', 'web'),
+                        'meta': result.get('meta', '')
                     })
                 
                 # Score web hits with the index's embedding model so web and index sources compare fairly
@@ -175,7 +188,8 @@ class ContentGenerator:
             'snippet': r.content[:200],
             'content': r.content,
             'score': r.score,
-            'source_type': 'knowledge_base'
+            'source_type': 'knowledge_base',
+            'meta': 'Knowledge base'
         } for r in search_results]
         all_sources = select_sources(web_sources + kb_sources)
         
@@ -211,7 +225,7 @@ class ContentGenerator:
             'cached': False,
             'model_used': generation_result.model,
             'finish_reason': generation_result.finish_reason,
-            'web_sources_count': sum(s.get('source_type') == 'web' for s in cited_sources),
+            'web_sources_count': sum(s.get('source_type') in ('web', 'paper') for s in cited_sources),
             'kb_sources_count': sum(s.get('source_type') == 'knowledge_base' for s in cited_sources),
             'classification': classification_reason,
             'used_rag': True
@@ -304,10 +318,17 @@ class ContentGenerator:
         """Generate content without RAG context when no relevant sources found"""
         generation_start = time.time()
         
+        # No sources matched, so nothing can be checked: keep the model brief and honest about it
         generation_result = self.openai_service.generate_content(
-            prompt=f"Please provide a helpful response to: {query}",
+            prompt=(
+                "No sources could be found for the question below, so answer from general knowledge.\n"
+                "- Only state things you are confident are well established; keep it short.\n"
+                "- Never invent specific names, numbers, dates, quotes, studies or links.\n"
+                "- If you are not sure, say so plainly instead of guessing.\n\n"
+                f"Question: {query}"
+            ),
             max_tokens=max_length,
-            temperature=temperature
+            temperature=min(temperature, 0.2)
         )
         
         generation_time = time.time() - generation_start

@@ -2,6 +2,7 @@
 VectorService against a fake embeddings client: no network, no API key.
 Run:  python -m pytest tests  (or: python tests/test_vectors.py)
 """
+import hashlib
 import importlib.util
 import json
 import os
@@ -32,7 +33,8 @@ class FakeEmbeddings:
         for text in input:
             v = np.zeros(dimensions)
             for word in text.lower().split():
-                v[hash(word.strip('.,?')) % dimensions] += 1
+                # Stable hash: built-in hash() is randomized per process, which made rankings flaky
+                v[int(hashlib.md5(word.strip('.,?').encode()).hexdigest(), 16) % dimensions] += 1
             data.append(SimpleNamespace(embedding=v.tolist()))
         return SimpleNamespace(data=data)
 
@@ -40,7 +42,7 @@ class FakeEmbeddings:
 def make(index_path, fail=False):
     embeddings = FakeEmbeddings()
     embeddings.fail = fail
-    service = vs.VectorService({'FAISS_INDEX_PATH': index_path, 'VECTOR_DIMENSION': 64}, client=SimpleNamespace(embeddings=embeddings))
+    service = vs.VectorService({'FAISS_INDEX_PATH': index_path, 'VECTOR_DIMENSION': 256}, client=SimpleNamespace(embeddings=embeddings))
     return service, embeddings
 
 
@@ -82,7 +84,8 @@ def test_similarities_score_texts_against_the_query():
 def test_failed_startup_embedding_heals_on_next_search():
     with tempfile.TemporaryDirectory() as tmp:
         service, embeddings = make(write_docs(tmp, DOCS), fail=True)
-        assert service.get_stats() == {**service.get_stats(), 'total_documents': 3, 'index_size': 0}
+        stats = service.get_stats()
+        assert (stats['total_documents'], stats['index_size']) == (3, 0)
         embeddings.fail = False
         assert service.search('bread yeast')[0].id == 'c'
         assert service.get_stats()['index_size'] == 3

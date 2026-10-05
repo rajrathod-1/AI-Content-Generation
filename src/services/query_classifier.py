@@ -155,8 +155,8 @@ class QueryClassifier:
         if query_type == QueryType.FACTUAL and confidence >= confidence_threshold:
             return True, f"Factual query (confidence: {confidence:.2f}) - {reasoning}"
         
-        # Don't use RAG for conversational queries with high confidence
-        elif query_type == QueryType.CONVERSATIONAL and confidence >= confidence_threshold:
+        # Canned replies only for short small talk; "can you help me understand X?" is a real question
+        elif query_type == QueryType.CONVERSATIONAL and confidence >= confidence_threshold and len(query.split()) <= 6:
             return False, f"Conversational query (confidence: {confidence:.2f}) - {reasoning}"
         
         # For low confidence or mixed queries, use a conservative approach

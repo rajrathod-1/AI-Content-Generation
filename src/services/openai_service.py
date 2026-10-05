@@ -32,10 +32,10 @@ Sources:
 User Query: {query}
 
 Instructions:
-1. Base every factual claim on the sources above
-2. Cite the source of each claim inline with its number in square brackets, like [1] or [2][3]; only use numbers listed above
-3. Write clear, well-structured Markdown in an engaging style
-4. If the sources don't cover part of the question, say so instead of guessing
+1. Base every factual claim on the sources above and cite it inline with its number, like [1] or [2][3]; only use numbers listed above
+2. You may add brief, widely known background to connect ideas, but never state specific facts (names, numbers, dates, results, quotes) that the sources don't support
+3. If the sources don't cover part of the question, say so plainly instead of guessing
+4. Write clear, well-structured Markdown; prefer short paragraphs and lists
 5. Do not add a separate list of sources at the end; the reader already sees them
 
 Answer:
@@ -84,7 +84,7 @@ class OpenAIService:
     
     def __init__(self, config: Dict):
         self.config = config
-        self.api_key = config.get('OPENAI_API_KEY')
+        self.api_key = config.get('LLM_API_KEY') or config.get('OPENAI_API_KEY')
         self.model = config.get('OPENAI_MODEL', 'gpt-4.1-mini')
         self.max_tokens = config.get('OPENAI_MAX_TOKENS', 2000)
         self.temperature = config.get('OPENAI_TEMPERATURE', 0.7)
@@ -98,6 +98,7 @@ class OpenAIService:
         # Initialize OpenAI client with timeout settings
         self.client = OpenAI(
             api_key=self.api_key,
+            base_url=config.get('LLM_BASE_URL') or None,  # None: the SDK falls back to OPENAI_BASE_URL
             timeout=120.0,  # Increase timeout to 2 minutes
             max_retries=3   # Add retry logic
         )
