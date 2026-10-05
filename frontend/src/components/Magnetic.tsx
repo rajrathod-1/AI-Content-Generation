@@ -25,7 +25,7 @@ export default function Magnetic({ children, strength = 0.3 }: { children: React
   }, [strength])
 
   return (
-    <span ref={ref} className="relative inline-block transition-transform duration-500 ease-out-expo before:absolute before:-inset-3 before:content-['']">
+    <span ref={ref} className="relative inline-block transition-transform duration-500 ease-out-expo before:absolute before:-inset-3 before:-z-10 before:content-['']">
       {children}
     </span>
   )

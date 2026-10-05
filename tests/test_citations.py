@@ -69,6 +69,16 @@ def test_select_sources_keeps_only_close_matches_best_first():
     assert len(cg.select_sources([{'score': 0.9}] * 9)) == 5
 
 
+def test_papers_need_to_be_nearly_the_best_match():
+    candidates = [
+        {'title': 'web world cup final', 'source_type': 'web', 'score': 0.64},
+        {'title': 'paper qatar urban development', 'source_type': 'paper', 'score': 0.55},
+        {'title': 'web world cup', 'source_type': 'web', 'score': 0.57},
+        {'title': 'paper faiss library', 'source_type': 'paper', 'score': 0.60},
+    ]
+    assert [s['title'] for s in cg.select_sources(candidates)] == ['web world cup final', 'paper faiss library', 'web world cup']
+
+
 def test_select_sources_without_scores_keeps_search_order():
     unscored = [{'title': 'a', 'score': 0.0}, {'title': 'b', 'score': 0.0}]
     assert [s['title'] for s in cg.select_sources(unscored)] == ['a', 'b']

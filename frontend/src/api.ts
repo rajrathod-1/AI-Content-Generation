@@ -10,7 +10,8 @@ export type Source = {
   url: string
   snippet: string
   score: number
-  source_type?: 'web' | 'knowledge_base'
+  source_type?: 'web' | 'paper' | 'knowledge_base'
+  meta?: string | null
 }
 
 export type GenerateResponse = {

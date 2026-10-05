@@ -18,9 +18,16 @@ class Config:
     
     # OpenAI Configuration
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-    OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4.1-mini')  # gpt-4-0125-preview was shut down 2026-03-26
+    OPENAI_MODEL = os.getenv('LLM_MODEL') or os.getenv('OPENAI_MODEL', 'gpt-4.1-mini')  # gpt-4-0125-preview was shut down 2026-03-26
+    # Optional separate provider for answers (e.g. DeepSeek), while embeddings stay on OPENAI_* (e.g. Gemini)
+    LLM_API_KEY = os.getenv('LLM_API_KEY')
+    LLM_BASE_URL = os.getenv('LLM_BASE_URL')
     OPENAI_MAX_TOKENS = int(os.getenv('OPENAI_MAX_TOKENS', 1000))
-    OPENAI_TEMPERATURE = float(os.getenv('OPENAI_TEMPERATURE', 0.7))
+    OPENAI_TEMPERATURE = float(os.getenv('OPENAI_TEMPERATURE', 0.2))  # low: answers should stick to the sources
+    
+    # Live sources (both optional): Tavily adds general web search; OpenAlex works keyless, a key raises its limit
+    TAVILY_API_KEY = os.getenv('TAVILY_API_KEY')
+    OPENALEX_API_KEY = os.getenv('OPENALEX_API_KEY')
     
     # Redis Configuration
     REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
